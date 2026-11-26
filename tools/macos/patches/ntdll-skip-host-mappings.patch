@@ -16,7 +16,7 @@ Like Wine, this patch is under the LGPL 2.1 or later. Applied by
 tools/macos/build-crossover-wine.sh.
 --- a/dlls/ntdll/unix/virtual.c
 +++ b/dlls/ntdll/unix/virtual.c
-@@ -1551,6 +1551,35 @@
+@@ -1551,6 +1551,37 @@
              (step < 0 && (char *)start - (char *)base < -step) ||
              step == 0)
              break;
@@ -31,9 +31,11 @@ tools/macos/build-crossover-wine.sh.
 +            vm_region_basic_info_data_64_t info;
 +            mach_msg_type_number_t count = VM_REGION_BASIC_INFO_COUNT_64;
 +            mach_port_t object = MACH_PORT_NULL;
-+            if (!mach_vm_region( mach_task_self(), &addr, &rsize, VM_REGION_BASIC_INFO_64,
-+                                 (vm_region_info_t)&info, &count, &object ) &&
-+                addr < (mach_vm_address_t)start + size)
++            kern_return_t kr = mach_vm_region( mach_task_self(), &addr, &rsize, VM_REGION_BASIC_INFO_64,
++                                               (vm_region_info_t)&info, &count, &object );
++            /* The object name is returned as a send right. */
++            if (object != MACH_PORT_NULL) mach_port_deallocate( mach_task_self(), object );
++            if (!kr && addr < (mach_vm_address_t)start + size)
 +            {
 +                size_t mask = (step > 0 ? step : -step) - 1;
 +                char *next;
